@@ -51,9 +51,13 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 **角色阴影图Atlas**  
 <p align="center">
 <img width="465" height="358" alt="image" src="https://github.com/user-attachments/assets/b5945d8c-ab5d-4e40-b1b7-65f0a53aa548" />
-</p>
-**B通道：采样一张sRGB的256x256的噪波图计算云层投影阴影**  
-<img width="2556" height="1175" alt="image" src="https://github.com/user-attachments/assets/48ad490e-71f1-485b-abcd-a7325c674db3" />
+</p>  
+
+**B通道：采样一张sRGB的256x256的噪波图计算云层投影阴影**
+<img width="2556" height="1175" alt="image" src="https://github.com/user-attachments/assets/48ad490e-71f1-485b-abcd-a7325c674db3" />  
+
+**A通道：存入屏幕空间AO（GTAO）**  
+<img width="2553" height="1175" alt="image" src="https://github.com/user-attachments/assets/8801f111-f5d5-49fb-b337-ca689af47a16" />
 
 
 
