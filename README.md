@@ -49,8 +49,11 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 这里跟最开始DepthPass更新的角色阴影呼应，**这一帧一共绘制了5张角色阴影图，4张直接复用之前帧的结果，只重画了一张，按需更新**。  
 除此之外，鸣潮移动端还做了**按重要性或者距离区分的阴影贴图分辨率分配+图集打包**，近处/重要/屏占比大的角色独占一张512，较远/次要/屏占比小的角色4个打包进一张512，两项优化，节省显存和带宽消耗。  
 **角色阴影图Atlas**  
-<img width="1021" height="1022" alt="image" src="https://github.com/user-attachments/assets/4711bc0c-ea80-479d-ab58-39801676d1df" />
-
+<p align="center">
+<img width="465" height="358" alt="image" src="https://github.com/user-attachments/assets/b5945d8c-ab5d-4e40-b1b7-65f0a53aa548" />
+</p>
+**B通道：采样一张sRGB的256x256的噪波图计算云层投影阴影**  
+<img width="2556" height="1175" alt="image" src="https://github.com/user-attachments/assets/48ad490e-71f1-485b-abcd-a7325c674db3" />
 
 
 
