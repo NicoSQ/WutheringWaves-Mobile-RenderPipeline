@@ -26,7 +26,11 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 <img width="2558" height="1346" alt="image" src="https://github.com/user-attachments/assets/c885e81b-7c36-49d4-b9e3-4021bc34bd1c" />
 #### GBuffer Pass
 按照不同材质属性，分别输出不同的GBuffer数据。这里可以参考鸣潮在 UE 官方上的分享，链接点此处。  
-（待补充）
+（待补充）  
+**不同材质写入的Stencil值，后续LightPass根据不同模板值计算不同光照分支，以下仅记录当前帧**  
+| 植被 | 建筑/普通物品 | 地形 | 近处角色 | 远处角色 |
+|------|---------------|----- |--------- | --------- |
+| 0010 0000 | 1010 0000 | 0011 0000 | 0000 1010 | 0000 0010 |
 ### 构建HZD + GPU Driven遮挡剔除
 对BasePass输出的深度图进行处理，把硬件深度转换为线性深度（R32F），**再降到半分辨率，构建一条分辨率从512x512—>4x4的Hi-Z深度金字塔，共8 级R16F精度的深度图**，加速后续的屏幕空间效果计算。  
 移动端优化：转化的线性深度图降低一半分辨率（960x540）处理，转为R16F精度存储。  
@@ -49,15 +53,40 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 这里跟最开始DepthPass更新的角色阴影呼应，**这一帧一共绘制了5张角色阴影图，4张直接复用之前帧的结果，只重画了一张，按需更新**。  
 除此之外，鸣潮移动端还做了**按重要性或者距离区分的阴影贴图分辨率分配+图集打包**，近处/重要/屏占比大的角色独占一张512，较远/次要/屏占比小的角色4个打包进一张512，两项优化，节省显存和带宽消耗。  
 **角色阴影图Atlas**  
-<p align="center">
-<img width="465" height="358" alt="image" src="https://github.com/user-attachments/assets/b5945d8c-ab5d-4e40-b1b7-65f0a53aa548" />
-</p>  
+
+<img width="465" height="358" alt="image" src="https://github.com/user-attachments/assets/b5945d8c-ab5d-4e40-b1b7-65f0a53aa548" />  
 
 **B通道：采样一张sRGB的256x256的噪波图计算云层投影阴影**
 <img width="2556" height="1175" alt="image" src="https://github.com/user-attachments/assets/48ad490e-71f1-485b-abcd-a7325c674db3" />  
 
 **A通道：存入屏幕空间AO（GTAO）**  
-<img width="2553" height="1175" alt="image" src="https://github.com/user-attachments/assets/8801f111-f5d5-49fb-b337-ca689af47a16" />
+<img width="2553" height="1175" alt="image" src="https://github.com/user-attachments/assets/8801f111-f5d5-49fb-b337-ca689af47a16" />  
+#### SSR屏幕空间反射  
+按材质选择性反射，只让金属/水面进入SSR反射计算。这一帧几乎都是建筑，地面，大多数像素被跳过。  
+（补充图片）  
+### 延迟光照着色
+每个全屏光照DP通过不同Stencil参考值计算不同光照分支（**Stencil Func = Equal，Blend One One**），输出的光照计算RT，分辨率1920x1080，R11G11B10_FLOAT格式。  
+<img width="1361" height="413" alt="image" src="https://github.com/user-attachments/assets/f15cb940-e27b-4c93-b8da-04cb2eec0f23" />  
+**不同模板值绘制不同光照分支如下**  
+| 植被光照结果  | 植被StencilTest  |
+|---|---|
+| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/50062fea-0de4-4e08-94bf-19f049720205" /> | <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/46a1503d-245e-4b94-8a3d-36702106eaf8" />|  
+
+| 建筑/普通物品光照结果 | 建筑/普通物品StencilTest  |
+|---|---|
+| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/354cf2d8-20b5-4eca-8357-cb7966572646" /> |  <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/5e7b6d88-5c4c-452c-8f40-f70a96f85288" /> |  
+
+| 地形光照结果 | 地形StencilTest  |
+|---|---|
+| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/9fe82884-8967-4fd3-bad7-a409f7a97fba" />|  <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/12bf0c0b-3738-4085-a150-66e31c0e4d84" />|  
+
+| 角色光照结果 | 角色StencilTest  |
+|---|---|
+| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/37ab34b8-621c-4c9e-b6eb-767189278a98" />| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/7cd472ae-705a-48a6-beb7-8e786d4386d0" />|
+
+
+
+
 
 
 
