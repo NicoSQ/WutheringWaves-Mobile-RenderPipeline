@@ -6,7 +6,7 @@ MuMu模拟器/小米14Ultra/画质高/分辨率1920x1080
 ### DepthPass
 #### 角色阴影图
 计算角色专属的高精度阴影图，独立于场景CSM阴影，移动端更加节省带宽。**阴影图大小512x512，精度D16**。用角色的LOD2模型做代理模型渲染，减少提交vertexBuffer数据量。  
-存在历史帧的角色阴影图复用，结合后面LightPass的屏幕空间阴影Mask结合部分，这一帧只更新了一张NPC的角色阴影图。
+存在历史帧的角色阴影图复用，结合后面LightPass的屏幕空间阴影Mask，这一帧只更新了一张NPC的角色阴影图。
 <img width="1913" height="858" alt="image" src="https://github.com/user-attachments/assets/7eb79249-a448-4f06-bc55-22579604d7ec" />
 #### 主光源CSM阴影
 场景主方向光的CSM级联阴影，2048x512，精度D16，按距离分四层级联横向打包，每一级512x512。
@@ -82,7 +82,11 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 
 | 角色光照结果 | 角色StencilTest  |
 |---|---|
-| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/37ab34b8-621c-4c9e-b6eb-767189278a98" />| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/7cd472ae-705a-48a6-beb7-8e786d4386d0" />|
+| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/37ab34b8-621c-4c9e-b6eb-767189278a98" />| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/7cd472ae-705a-48a6-beb7-8e786d4386d0" />|  
+
+### 水面渲染
+
+### 高度雾
 
 
 
