@@ -5,7 +5,8 @@ MuMu模拟器/小米14Ultra/画质高/分辨率1920x1080
 ## 渲染管线分析
 ### DepthPass
 #### 角色阴影图
-计算角色专属的高精度阴影图，独立于场景CSM阴影，移动端更加节省带宽。**阴影图大小512x512，精度D16**。用角色的LOD2模型做代理模型渲染，减少提交vertexBuffer数据量。  
+计算角色专属的高精度阴影图，独立于场景CSM阴影，移动端更加节省带宽。**阴影图大小512x512，精度D16**。用角色的LOD2模型做代理模型渲染，顶点变换（含骨骼Skinning）与光栅化开销直接减少一个数量级。  
+<img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/5845f302-3d1b-4e4c-82e5-8c787a4c2105" />
 存在历史帧的角色阴影图复用，结合后面LightPass的屏幕空间阴影Mask，这一帧只更新了一张NPC的角色阴影图。
 <img width="1913" height="858" alt="image" src="https://github.com/user-attachments/assets/7eb79249-a448-4f06-bc55-22579604d7ec" />
 #### 主光源CSM阴影
@@ -87,8 +88,9 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 
 #### 水面渲染/高度雾
 光照部分最后阶段进行场景水面和高度雾的渲染。  
-水面用输入一张全分辨率的场景深度和半分辨率的场景颜色作为输入，应该用来计算岸边软边过渡和水面镜面反射。  
-
+水面用输入一张全分辨率的场景深度和半分辨率的场景颜色作为输入，用来计算岸边软边过渡和水面镜面反射。  
+水体的网格专门做了岸边过渡的UV处理，应该也是为了更好计算岸边白沫效果。  
+<img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/d5b00f00-62ac-4d6a-8014-798c5a8d531e" />  
 高度雾为输入四个顶点的全屏mesh计算，混合模式设置为One+SrcAlpha，比较典型基于深度的全屏高度雾计算叠加。  
 <img width="2021" height="66" alt="image" src="https://github.com/user-attachments/assets/e57ead35-fcd6-40ea-ab8f-eb9b65041fd0" />  
 <img width="2552" height="1138" alt="image" src="https://github.com/user-attachments/assets/bca7b65b-c568-4d62-be21-02af6e484939" />  
@@ -96,11 +98,16 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 ### Translucent  
 #### 特效计算
 接下来一段是标准的半透明/特效计算阶段，走前向渲染，基本基于两种混合模式。计算结果输出到HDR的场景光照颜色RT上。  
-**特效输入贴图**  
-
-<img width="274" height="642" alt="image" src="https://github.com/user-attachments/assets/60fba410-aaea-4fae-9baa-9025c78e5c8f" />  
 <img width="1467" height="67" alt="image" src="https://github.com/user-attachments/assets/1c99cccb-d177-4a38-be82-2b9331b19ea8" />  
-<img width="1473" height="70" alt="image" src="https://github.com/user-attachments/assets/a6cacd44-2682-49d8-8611-367caaaa6109" />
+<img width="1473" height="70" alt="image" src="https://github.com/user-attachments/assets/a6cacd44-2682-49d8-8611-367caaaa6109" />  
+
+#### 云层计算
+在半透最开始阶段，基于半椭球形的天空盒，首先渲染天空云层效果。  
+**云层输入贴图**  
+<img width="274" height="642" alt="image" src="https://github.com/user-attachments/assets/60fba410-aaea-4fae-9baa-9025c78e5c8f" />   
+| 天空盒球体 | 云层渲染效果  |
+|---|---|
+| <img width="640" height="328" alt="image" src="https://github.com/user-attachments/assets/bb9c0e15-8341-4728-80db-7deec1404529" />  | <img width="640" height="328" alt="image" src="https://github.com/user-attachments/assets/7a498fe5-051f-4dbe-8747-31df56c74c46" /> |
 
 ### 屏幕后处理/2D UI合成
 #### 整体链路
