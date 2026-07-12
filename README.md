@@ -64,6 +64,7 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 #### SSR屏幕空间反射  
 按材质选择性反射，只让金属/水面进入SSR反射计算。这一帧几乎都是建筑，地面，大多数像素被跳过。  
 （补充图片）  
+
 ### 延迟光照着色
 每个全屏光照DP通过不同Stencil参考值计算不同光照分支（**Stencil Func = Equal，Blend One One**），输出的光照计算RT，分辨率1920x1080，R11G11B10_FLOAT格式。  
 <img width="1361" height="413" alt="image" src="https://github.com/user-attachments/assets/f15cb940-e27b-4c93-b8da-04cb2eec0f23" />  
@@ -84,9 +85,59 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 |---|---|
 | <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/37ab34b8-621c-4c9e-b6eb-767189278a98" />| <img width="534" height="298" alt="image" src="https://github.com/user-attachments/assets/7cd472ae-705a-48a6-beb7-8e786d4386d0" />|  
 
-### 水面渲染
+#### 水面渲染/高度雾
+光照部分最后阶段进行场景水面和高度雾的渲染。  
+水面用输入一张全分辨率的场景深度和半分辨率的场景颜色作为输入，应该用来计算岸边软边过渡和水面镜面反射。  
 
-### 高度雾
+高度雾为输入四个顶点的全屏mesh计算，混合模式设置为One+SrcAlpha，比较典型基于深度的全屏高度雾计算叠加。  
+<img width="2021" height="66" alt="image" src="https://github.com/user-attachments/assets/e57ead35-fcd6-40ea-ab8f-eb9b65041fd0" />  
+<img width="2552" height="1138" alt="image" src="https://github.com/user-attachments/assets/bca7b65b-c568-4d62-be21-02af6e484939" />  
+
+### Translucent  
+#### 特效计算
+接下来一段是标准的半透明/特效计算阶段，走前向渲染，基本基于两种混合模式。计算结果输出到HDR的场景光照颜色RT上。  
+**特效输入贴图**  
+
+<img width="274" height="642" alt="image" src="https://github.com/user-attachments/assets/60fba410-aaea-4fae-9baa-9025c78e5c8f" />  
+<img width="1467" height="67" alt="image" src="https://github.com/user-attachments/assets/1c99cccb-d177-4a38-be82-2b9331b19ea8" />  
+<img width="1473" height="70" alt="image" src="https://github.com/user-attachments/assets/a6cacd44-2682-49d8-8611-367caaaa6109" />
+
+### 屏幕后处理/2D UI合成
+#### 整体链路
+最后阶段进行全屏的屏幕后处理。链路包括：TAA抗锯齿计算 + Bloom合成 + 自动曝光 + 计算ColorGradingLUT + Tonemap最终合成（HDR->LDR）。  
+**最终输出**  
+<img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/7bf5089d-08b3-478f-b169-a77f6ba5a4ce" />
+#### TAA抗锯齿 
+传统TAA抗锯齿计算作抗锯齿计算。**SceneColor + 历史帧（上一帧TAA输出结果） + MotionVector（GBuffer阶段输出）+ 深度 + Mask 作为输入**，输出精度R11G11B11，分辨率为1920x1080的HDR屏幕图像，作为最后后处理合成的基础。  
+
+| MotionVector输入 | TAA输出结果  |
+|---|---|
+| <img width="796" height="447" alt="image" src="https://github.com/user-attachments/assets/f8e315f4-5f3f-4a45-b482-649a355490fe" /> | <img width="796" height="447" alt="image" src="https://github.com/user-attachments/assets/3bfd7045-bb10-447b-9471-05ef623212e8" /> |  
+
+#### Bloom
+上一步TAA输出结果作为Bloom计算的输入。先降采样提取屏幕超过阈值的亮度，再搭建4级高斯模糊金字塔（480x270/240x135/120x68/30x17），每一级金字塔实现一次H，V方向上的高斯模糊计算，为后续Bloom合并做准备。  
+**最终Bloom合成（各级金字塔合成一张480x270的Bloom RT）**  
+<img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/00dd8edf-1501-4072-89f6-3ec512ac3863" />  
+
+#### LUT/最终合成  
+最终合成前，计算输出R10G10B10A2精度的LUT贴图。  
+<img width="396" height="304" alt="image" src="https://github.com/user-attachments/assets/dab9fe35-bbb5-4b62-a7d5-266ebec63ec9" />  
+
+**最终合成输入：TAA输出的HDR场景色 + Bloom合并结果 + LUT + 深度 + 曝光值，转换为最终的LDR屏幕图像（R11G11B10 ——> R8G8B8A8）**  
+<img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/044664e0-dbaf-4e86-99bb-6f48a9a31a6f" />  
+
+#### 2D UI叠加
+Tonemap输出LDR后2D UI直接和RT叠加，节省一次移动端全屏RT写回和读取的带宽消耗。  
+<img width="2551" height="1111" alt="image" src="https://github.com/user-attachments/assets/74e36ece-0680-437e-a4b4-605231c86b3b" />
+
+
+
+
+
+
+
+
+
 
 
 
