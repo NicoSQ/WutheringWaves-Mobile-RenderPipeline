@@ -1,7 +1,6 @@
-# WutheringWaves-Mobile-RenderPipeline
+# 鸣潮移动端渲染管线截帧分析  
 ## 截帧环境 
-MuMu模拟器/小米14Ultra/画质高/分辨率1920x1080  
-（补充图片）
+MuMu模拟器/小米14Ultra/画质高/分辨率1920x1080，基于Rendedoc学习下鸣潮移动端渲染管线。
 ## 渲染管线分析
 ### DepthPass
 #### 角色阴影图
@@ -26,8 +25,17 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 开始提前绘制场景所有植被的PreDepth，减少后续绘制植被的OverDraw（镂空直接来自叶片网格几何），**深度统一存入D24S8的深度图**。
 <img width="2558" height="1346" alt="image" src="https://github.com/user-attachments/assets/c885e81b-7c36-49d4-b9e3-4021bc34bd1c" />
 #### GBuffer Pass
-按照不同材质属性，分别输出不同的GBuffer数据。这里可以参考鸣潮在 UE 官方上的分享，链接点此处。  
-（待补充）  
+按照不同材质属性，分别输出不同的GBuffer数据。这里可以详细信息可以参考一下**鸣潮在UE官方上的分享**，链接在下方（PS：官方分享到后面去掉了Toon模式的GBuffer，但是最新版截帧看好像还是存在的）。  
+**https://www.bilibili.com/video/BV1BK411v7FY/?spm_id_from=333.337.search-card.all.click&vd_source=fadff3dd5afa82456b1c99decd7cc54a**  
+<img width="2015" height="1028" alt="image" src="https://github.com/user-attachments/assets/2c89f4f0-aebc-4495-884d-b6239674f88b" />  
+其中，GBufferA中B通道直接光模式按分享会说法是计算云层投影的。  
+**GBufferA(R8G8B8A8)**  
+<img width="2547" height="1173" alt="image" src="https://github.com/user-attachments/assets/9172144e-536f-4132-ab05-89a656889cab" />  
+**GBufferB(R8G8B8A8)**  
+<img width="2555" height="1169" alt="image" src="https://github.com/user-attachments/assets/f4638422-3dba-49d1-acce-34e5c9a0662c" />  
+**GBufferC(R8G8B8A8_SRGB)**  
+<img width="2552" height="1174" alt="image" src="https://github.com/user-attachments/assets/0ab552b1-a563-45e6-8425-3baf6f5321d1" />
+
 **不同材质写入的Stencil值，后续LightPass根据不同模板值计算不同光照分支，以下仅记录当前帧**  
 | 植被 | 建筑/普通物品 | 地形 | 近处角色 | 远处角色 |
 |------|---------------|----- |--------- | --------- |
@@ -64,7 +72,7 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 <img width="2553" height="1175" alt="image" src="https://github.com/user-attachments/assets/8801f111-f5d5-49fb-b337-ca689af47a16" />  
 #### SSR屏幕空间反射  
 按材质选择性反射，只让金属/水面进入SSR反射计算。这一帧几乎都是建筑，地面，大多数像素被跳过。  
-（补充图片）  
+详细待补充。
 
 ### 延迟光照着色
 每个全屏光照DP通过不同Stencil参考值计算不同光照分支（**Stencil Func = Equal，Blend One One**），输出的光照计算RT，分辨率1920x1080，R11G11B10_FLOAT格式。  
@@ -116,6 +124,8 @@ CSM级联阴影每帧交替更新，**这一帧只更新了最左边，距离最
 <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/7bf5089d-08b3-478f-b169-a77f6ba5a4ce" />
 #### TAA抗锯齿 
 传统TAA抗锯齿计算作抗锯齿计算。**SceneColor + 历史帧（上一帧TAA输出结果） + MotionVector（GBuffer阶段输出）+ 深度 + Mask 作为输入**，输出精度R11G11B11，分辨率为1920x1080的HDR屏幕图像，作为最后后处理合成的基础。  
+上面链接的官方分享会有提到做过的TAAU的过程和一些效果优化方案。  
+<img width="543" height="302" alt="image" src="https://github.com/user-attachments/assets/409a5803-6f7d-4071-a515-9b1df058d80d" />
 
 | MotionVector输入 | TAA输出结果  |
 |---|---|
